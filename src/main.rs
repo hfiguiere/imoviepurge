@@ -81,34 +81,36 @@ fn list_source_assets(source: &Path) -> Vec<PathBuf> {
 }
 
 fn intersect(set: Vec<PathBuf>, source: Vec<PathBuf>) -> Vec<PathBuf> {
-    let mut dupes: Vec<PathBuf> = vec!();
+    let lib_content: HashMap<OsString, PathBuf> = set.into_iter()
+        .filter_map(|asset| {
+            if let Some(file_name) = asset.file_name() {
+                return Some((file_name.to_os_string(),
+                             asset.clone()));
+            }
+            None
+        })
+        .collect();
 
-    let mut lib_content: HashMap<OsString, PathBuf> = HashMap::new();
-    for asset in set {
-        if let Some(file_name) = asset.file_name() {
-            lib_content.insert(file_name.to_os_string(),
-                               asset.clone());
-        }
-    }
-    for source_media in source {
-        if let Some(file_name) = source_media.file_name() {
-            let file_name = file_name.to_os_string();
-            if let Some(p) = lib_content.get(&file_name) {
-                let source_attr = fs::metadata(&source_media);
-                let asset_attr = fs::metadata(p);
-                if source_attr.is_ok() && asset_attr.is_ok() {
+    return source.into_iter()
+        .filter_map(|source_media| {
+            if let Some(file_name) = source_media.file_name() {
+                let file_name = file_name.to_os_string();
+                if let Some(p) = lib_content.get(&file_name) {
+                    let source_attr = fs::metadata(&source_media);
+                    let asset_attr = fs::metadata(p);
+                    if !source_attr.is_ok() || !asset_attr.is_ok() {
+                        return None;
+                    }
                     let source_attr = source_attr.unwrap();
                     let asset_attr = asset_attr.unwrap();
-                    let samesize = source_attr.len() == asset_attr.len();
-                    if samesize {
-                        dupes.push(source_media.clone());
+                    if source_attr.len() == asset_attr.len() {
+                        return Some(source_media.clone());
                     }
                 }
             }
-        }
-    }
-
-    dupes
+            None
+        })
+        .collect();
 }
 
 fn main() {
