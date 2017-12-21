@@ -18,14 +18,14 @@ const USAGE: &'static str = "
 iMovie purge.
 
 Usage:
-  imoviepurge -l <imovielibrary> -d <source>
+  imoviepurge -l <imovielibrary> -s <source>
 ";
 
 #[derive(Debug, Deserialize)]
 struct Args {
     flag_l: bool,
     arg_imovielibrary: String,
-    flag_d: bool,
+    flag_s: bool,
     arg_source: String,
 }
 
