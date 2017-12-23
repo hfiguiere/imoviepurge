@@ -11,7 +11,6 @@ extern crate docopt;
 extern crate walkdir;
 
 use std::collections::HashMap;
-use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -84,11 +83,34 @@ fn list_source_assets(source: &Path) -> Vec<PathBuf> {
     assets
 }
 
+fn files_equal(asset: &PathBuf, source: &PathBuf) -> bool {
+    let source_attr = fs::metadata(source);
+    let asset_attr = fs::metadata(asset);
+    if !source_attr.is_ok() || !asset_attr.is_ok() {
+        return false
+    }
+    let source_attr = source_attr.unwrap();
+    let asset_attr = asset_attr.unwrap();
+    source_attr.len() == asset_attr.len()
+}
+
+fn canonicalize_filename(path: &PathBuf) -> Option<String> {
+    let mut new_path = path.clone();
+    if let Some(extension) = path.extension() {
+        let lc_ext = extension.to_string_lossy().to_lowercase();
+        new_path.set_extension(&lc_ext);
+    }
+    if let Some(filename) = new_path.file_name() {
+        return Some(filename.to_string_lossy().to_string());
+    }
+    None
+}
+
 fn intersect(set: Vec<PathBuf>, source: Vec<PathBuf>) -> Vec<PathBuf> {
-    let lib_content: HashMap<OsString, PathBuf> = set.into_iter()
+    let lib_content: HashMap<String, PathBuf> = set.into_iter()
         .filter_map(|asset| {
             if let Some(file_name) = asset.file_name() {
-                return Some((file_name.to_os_string(),
+                return Some((file_name.to_string_lossy().to_string(),
                              asset.clone()));
             }
             None
@@ -97,17 +119,9 @@ fn intersect(set: Vec<PathBuf>, source: Vec<PathBuf>) -> Vec<PathBuf> {
 
     return source.into_iter()
         .filter_map(|source_media| {
-            if let Some(file_name) = source_media.file_name() {
-                let file_name = file_name.to_os_string();
+            if let Some(file_name) = canonicalize_filename(&source_media) {
                 if let Some(p) = lib_content.get(&file_name) {
-                    let source_attr = fs::metadata(&source_media);
-                    let asset_attr = fs::metadata(p);
-                    if !source_attr.is_ok() || !asset_attr.is_ok() {
-                        return None;
-                    }
-                    let source_attr = source_attr.unwrap();
-                    let asset_attr = asset_attr.unwrap();
-                    if source_attr.len() == asset_attr.len() {
+                    if files_equal(p, &source_media) {
                         return Some(source_media.clone());
                     }
                 }
