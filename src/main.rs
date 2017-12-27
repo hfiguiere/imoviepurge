@@ -145,6 +145,6 @@ fn main() {
     let dupes = intersect(assets, source_assets);
 
     for dupe in dupes {
-        println!("{:?}", dupe);
+        println!("{}", dupe.to_string_lossy());
     }
 }
