@@ -4,10 +4,10 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+extern crate docopt;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate docopt;
 extern crate walkdir;
 
 use std::collections::HashMap;
@@ -34,11 +34,11 @@ struct Args {
 
 const MEDIA_SUBDIR: &'static str = "Original Media";
 
-
 fn list_media_assets(library: &Path) -> Vec<PathBuf> {
-    let mut assets: Vec<PathBuf> = vec!();
+    let mut assets: Vec<PathBuf> = vec![];
 
-    for media_dir in library.read_dir()
+    for media_dir in library
+        .read_dir()
         .expect("path not found")
         .filter_map(|entry| {
             if !entry.is_ok() {
@@ -55,13 +55,13 @@ fn list_media_assets(library: &Path) -> Vec<PathBuf> {
             }
             None
         }) {
-            for media in media_dir.read_dir().expect("media directory error") {
-                if !media.is_ok() {
-                    continue;
-                }
-                assets.push(media.unwrap().path());
+        for media in media_dir.read_dir().expect("media directory error") {
+            if !media.is_ok() {
+                continue;
             }
+            assets.push(media.unwrap().path());
         }
+    }
 
     assets
 }
@@ -87,7 +87,7 @@ fn files_equal(asset: &PathBuf, source: &PathBuf) -> bool {
     let source_attr = fs::metadata(source);
     let asset_attr = fs::metadata(asset);
     if !source_attr.is_ok() || !asset_attr.is_ok() {
-        return false
+        return false;
     }
     let source_attr = source_attr.unwrap();
     let asset_attr = asset_attr.unwrap();
@@ -110,14 +110,14 @@ fn intersect(set: Vec<PathBuf>, source: Vec<PathBuf>) -> Vec<PathBuf> {
     let lib_content: HashMap<String, PathBuf> = set.into_iter()
         .filter_map(|asset| {
             if let Some(file_name) = asset.file_name() {
-                return Some((file_name.to_string_lossy().to_string(),
-                             asset.clone()));
+                return Some((file_name.to_string_lossy().to_string(), asset.clone()));
             }
             None
         })
         .collect();
 
-    return source.into_iter()
+    return source
+        .into_iter()
         .filter_map(|source_media| {
             if let Some(file_name) = canonicalize_filename(&source_media) {
                 if let Some(p) = lib_content.get(&file_name) {
