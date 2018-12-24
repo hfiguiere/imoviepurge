@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 use docopt::Docopt;
 use walkdir::WalkDir;
 
-const USAGE: &'static str = "
+const USAGE: &str = "
 iMovie purge.
 
 Usage:
@@ -32,7 +32,7 @@ struct Args {
     arg_source: String,
 }
 
-const MEDIA_SUBDIR: &'static str = "Original Media";
+const MEDIA_SUBDIR: &str = "Original Media";
 
 fn list_media_assets(library: &Path) -> Vec<PathBuf> {
     let mut assets: Vec<PathBuf> = vec![];
@@ -41,7 +41,7 @@ fn list_media_assets(library: &Path) -> Vec<PathBuf> {
         .read_dir()
         .expect("path not found")
         .filter_map(|entry| {
-            if !entry.is_ok() {
+            if entry.is_err() {
                 return None;
             }
             let entry = entry.unwrap();
@@ -56,7 +56,7 @@ fn list_media_assets(library: &Path) -> Vec<PathBuf> {
             None
         }) {
         for media in media_dir.read_dir().expect("media directory error") {
-            if !media.is_ok() {
+            if media.is_err() {
                 continue;
             }
             assets.push(media.unwrap().path());
@@ -86,7 +86,7 @@ fn list_source_assets(source: &Path) -> Vec<PathBuf> {
 fn files_equal(asset: &PathBuf, source: &PathBuf) -> bool {
     let source_attr = fs::metadata(source);
     let asset_attr = fs::metadata(asset);
-    if !source_attr.is_ok() || !asset_attr.is_ok() {
+    if source_attr.is_err() || asset_attr.is_err() {
         return false;
     }
     let source_attr = source_attr.unwrap();
@@ -116,8 +116,7 @@ fn intersect(set: Vec<PathBuf>, source: Vec<PathBuf>) -> Vec<PathBuf> {
         })
         .collect();
 
-    return source
-        .into_iter()
+    source.into_iter()
         .filter_map(|source_media| {
             if let Some(file_name) = canonicalize_filename(&source_media) {
                 if let Some(p) = lib_content.get(&file_name) {
@@ -128,7 +127,7 @@ fn intersect(set: Vec<PathBuf>, source: Vec<PathBuf>) -> Vec<PathBuf> {
             }
             None
         })
-        .collect();
+        .collect()
 }
 
 fn main() {
